@@ -424,6 +424,78 @@ body {
     flex-direction: column;
     gap: 20px;
   }
+
+  .active-filters-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 14px 16px;
+    border: 1px solid #d8dcee;
+    border-radius: 16px;
+    background: linear-gradient(180deg, #ffffff 0%, #f8f9ff 100%);
+    box-shadow: 0 6px 18px rgba(36, 49, 94, 0.06);
+  }
+
+  .active-filters-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .active-filters-title {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #5f6985;
+  }
+
+  .active-filters-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .active-filter-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid #cfd5f6;
+    border-radius: 999px;
+    background: #eef1ff;
+    color: #25304f;
+    padding: 8px 12px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+  }
+
+  .active-filter-chip:hover,
+  .active-filter-chip:focus {
+    transform: translateY(-1px);
+    border-color: #7e8be8;
+    box-shadow: 0 6px 14px rgba(90, 95, 230, 0.14);
+    outline: none;
+  }
+
+  .active-filters-clear {
+    border: none;
+    background: transparent;
+    color: #4f5fd6;
+    font-size: 13px;
+    font-weight: 800;
+    cursor: pointer;
+    padding: 0;
+  }
+
+  .active-filters-clear:hover,
+  .active-filters-clear:focus {
+    text-decoration: underline;
+    outline: none;
+  }
   
   .result-card {
     background: white;
@@ -492,4 +564,11 @@ body {
 
   .calendar-div {
 	margin-top: 20px;
+  }
+
+  @media (max-width: 640px) {
+    .active-filters-header {
+      flex-direction: column;
+      align-items: flex-start;
+    }
   }

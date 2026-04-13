@@ -35,6 +35,13 @@ export default function App() {
   const [user, setUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [openDownloadStatus, setOpenDownloadStatus] = useState(null);
+  const [appliedFilters, setAppliedFilters] = useState({
+    yearFrom: "",
+    yearTo: "",
+    agencies: [],
+    cfrParts: [],
+    docType: "",
+  });
   /** Passed as GET /search/?sort_by= (empty = server default relevance) */
   const [searchSortBy, setSearchSortBy] = useState("");
 
@@ -74,37 +81,65 @@ export default function App() {
     status.size +
     Object.values(selectedCfrParts).reduce((sum, set) => sum + set.size, 0);
 
-  const runSearch = async (newPage = 1, sortByOverride) => {
-    const sortBy = sortByOverride !== undefined ? sortByOverride : searchSortBy;
-    setLoading(true);
-    setHasSearched(true);
-    setUnauthorized(false);
+  const buildSearchParams = (overrides = {}) => {
+    const nextQuery = overrides.query ?? query;
+    const nextDocType = overrides.docType ?? docType;
+    const nextYearFrom = overrides.yearFrom ?? yearFrom;
+    const nextYearTo = overrides.yearTo ?? yearTo;
+    const nextSelectedAgencies =
+      overrides.selectedAgencies ?? selectedAgencies;
+    const nextSelectedCfrParts =
+      overrides.selectedCfrParts ?? selectedCfrParts;
+    const nextSortBy = overrides.sortBy ?? searchSortBy;
 
-    try {
-      const selectedAgencyList = Array.from(selectedAgencies);
-
-      const selectedCfrList = Object.entries(selectedCfrParts).flatMap(
+    return {
+      query: nextQuery,
+      docType: nextDocType,
+      yearFrom: nextYearFrom,
+      yearTo: nextYearTo,
+      selectedAgencyList: Array.from(nextSelectedAgencies),
+      selectedCfrList: Object.entries(nextSelectedCfrParts).flatMap(
         ([title, parts]) =>
           Array.from(parts).map((part) => ({
             title: Number(title),
             part,
           }))
-      );
+      ),
+      sortBy: nextSortBy,
+    };
+  };
 
+  const runSearch = async (newPage = 1, sortByOverride, overrides = {}) => {
+    const params = buildSearchParams({
+      ...overrides,
+      sortBy: sortByOverride !== undefined ? sortByOverride : overrides.sortBy,
+    });
+    setLoading(true);
+    setHasSearched(true);
+    setUnauthorized(false);
+
+    try {
       const data = await searchDockets(
-        query,
-        docType,
-        selectedAgencyList,
-        selectedCfrList,
+        params.query,
+        params.docType,
+        params.selectedAgencyList,
+        params.selectedCfrList,
         newPage,
-        yearFrom,
-        yearTo,
-        sortBy
+        params.yearFrom,
+        params.yearTo,
+        params.sortBy
       );
 
       setResults(data.results);
       setPagination(data.pagination);
       setPage(newPage);
+      setAppliedFilters({
+        yearFrom: params.yearFrom,
+        yearTo: params.yearTo,
+        agencies: params.selectedAgencyList,
+        cfrParts: params.selectedCfrList,
+        docType: params.docType,
+      });
     } catch (err) {
       if (err.message === "UNAUTHORIZED") {
         setUnauthorized(true);
@@ -129,6 +164,62 @@ export default function App() {
     setSelectedAgencies(new Set());
     setStatus(new Set());
     setSelectedCfrParts({});
+  };
+
+  const removeAppliedAgency = (agencyCode) => {
+    const nextAgencies = new Set(selectedAgencies);
+    nextAgencies.delete(agencyCode);
+    setSelectedAgencies(nextAgencies);
+    runSearch(1, undefined, { selectedAgencies: nextAgencies });
+  };
+
+  const removeAppliedCfrPart = (title, part) => {
+    const nextCfrParts = { ...selectedCfrParts };
+    const titleKey = String(title);
+    const nextParts = new Set(nextCfrParts[titleKey] || []);
+
+    nextParts.delete(part);
+
+    if (nextParts.size === 0) {
+      delete nextCfrParts[titleKey];
+    } else {
+      nextCfrParts[titleKey] = nextParts;
+    }
+
+    setSelectedCfrParts(nextCfrParts);
+    runSearch(1, undefined, { selectedCfrParts: nextCfrParts });
+  };
+
+  const clearAppliedDocType = () => {
+    setDocType("");
+    runSearch(1, undefined, { docType: "" });
+  };
+
+  const clearAppliedYearFrom = () => {
+    setYearFrom("");
+    runSearch(1, undefined, { yearFrom: "" });
+  };
+
+  const clearAppliedYearTo = () => {
+    setYearTo("");
+    runSearch(1, undefined, { yearTo: "" });
+  };
+
+  const clearAllAppliedFilters = () => {
+    setYearFrom("");
+    setYearTo("");
+    setAgencySearch("");
+    setSelectedAgencies(new Set());
+    setStatus(new Set());
+    setSelectedCfrParts({});
+    setDocType("");
+    runSearch(1, undefined, {
+      yearFrom: "",
+      yearTo: "",
+      docType: "",
+      selectedAgencies: new Set(),
+      selectedCfrParts: {},
+    });
   };
 
   return (
@@ -236,6 +327,13 @@ export default function App() {
                     hasSearched={hasSearched}
                     query={query}
                     unauthorized={unauthorized}
+                    appliedFilters={appliedFilters}
+                    onRemoveAgency={removeAppliedAgency}
+                    onRemoveCfrPart={removeAppliedCfrPart}
+                    onClearDocType={clearAppliedDocType}
+                    onClearYearFrom={clearAppliedYearFrom}
+                    onClearYearTo={clearAppliedYearTo}
+                    onClearAllFilters={clearAllAppliedFilters}
                   />
                   <div className="pagination-div">
                     <button

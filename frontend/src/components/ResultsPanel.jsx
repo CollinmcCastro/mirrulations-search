@@ -1,7 +1,7 @@
-import {ColorRing} from 'react-loader-spinner'
+import { ColorRing } from "react-loader-spinner";
 import { useState } from "react";
 import CollectionModal from "./CollectionModal";
-import DownloadModal from '../pages/DownloadModal';
+import DownloadModal from "../pages/DownloadModal";
 
 const ECFR_URL = "https://www.ecfr.gov";
 const MAX_VOLUME = 10000;
@@ -23,10 +23,65 @@ function scoreResult(item) {
 }
 
 
-export default function ResultsPanel({ results, loading, hasSearched, query, unauthorized }) {
+export default function ResultsPanel({
+ results,
+ loading,
+ hasSearched,
+ query,
+ unauthorized,
+ appliedFilters,
+ onRemoveAgency,
+ onRemoveCfrPart,
+ onClearDocType,
+ onClearYearFrom,
+ onClearYearTo,
+ onClearAllFilters,
+}) {
 
  const [modalDocketId, setModalDocketId] = useState(null);
- const [downloadDocketId, setDownloadDocketId] = useState(null)
+ const [downloadDocketId, setDownloadDocketId] = useState(null);
+
+ const filterChips = [];
+
+ if (appliedFilters?.docType) {
+   filterChips.push({
+     key: `doc-type-${appliedFilters.docType}`,
+     label: `Type: ${appliedFilters.docType}`,
+     onRemove: onClearDocType,
+   });
+ }
+
+ if (appliedFilters?.yearFrom) {
+   filterChips.push({
+     key: `year-from-${appliedFilters.yearFrom}`,
+     label: `From: ${appliedFilters.yearFrom}`,
+     onRemove: onClearYearFrom,
+   });
+ }
+
+ if (appliedFilters?.yearTo) {
+   filterChips.push({
+     key: `year-to-${appliedFilters.yearTo}`,
+     label: `To: ${appliedFilters.yearTo}`,
+     onRemove: onClearYearTo,
+   });
+ }
+
+ (appliedFilters?.agencies || []).forEach((agency) => {
+   filterChips.push({
+     key: `agency-${agency}`,
+     label: `Agency: ${agency}`,
+     onRemove: () => onRemoveAgency(agency),
+   });
+ });
+
+ (appliedFilters?.cfrParts || []).forEach(({ title, part }) => {
+   filterChips.push({
+     key: `cfr-${title}-${part}`,
+     label: `Title ${title} Part ${part}`,
+     onRemove: () => onRemoveCfrPart(title, part),
+   });
+ });
 
  if (unauthorized) {
    return (
@@ -53,6 +108,29 @@ export default function ResultsPanel({ results, loading, hasSearched, query, una
  if (!results || results.length === 0) {
    return (
      <div className="results">
+       {filterChips.length > 0 && (
+         <div className="active-filters-panel">
+           <div className="active-filters-header">
+             <p className="active-filters-title">Active filters</p>
+             <button type="button" className="active-filters-clear" onClick={onClearAllFilters}>
+               Clear all
+             </button>
+           </div>
+           <div className="active-filters-row">
+             {filterChips.map((chip) => (
+               <button
+                 key={chip.key}
+                 type="button"
+                 className="active-filter-chip"
+                 onClick={chip.onRemove}
+               >
+                 <span>{chip.label}</span>
+                 <span aria-hidden>×</span>
+               </button>
+             ))}
+           </div>
+         </div>
+       )}
        <p>No results found.</p>
      </div>
    );
@@ -64,6 +142,29 @@ export default function ResultsPanel({ results, loading, hasSearched, query, una
 
  return (
    <div className="results">
+    {filterChips.length > 0 && (
+      <div className="active-filters-panel">
+        <div className="active-filters-header">
+          <p className="active-filters-title">Active filters</p>
+          <button type="button" className="active-filters-clear" onClick={onClearAllFilters}>
+            Clear all
+          </button>
+        </div>
+        <div className="active-filters-row">
+          {filterChips.map((chip) => (
+            <button
+              key={chip.key}
+              type="button"
+              className="active-filter-chip"
+              onClick={chip.onRemove}
+            >
+              <span>{chip.label}</span>
+              <span aria-hidden>×</span>
+            </button>
+          ))}
+        </div>
+      </div>
+    )}
     {modalDocketId && (
     <CollectionModal
       docketId={modalDocketId}
